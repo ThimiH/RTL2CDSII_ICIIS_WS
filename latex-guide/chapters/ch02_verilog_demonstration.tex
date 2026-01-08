@@ -1,0 +1,187 @@
+\chapter{Verilog Demonstration: Design 6 Adder}
+
+\section{Goals}
+The goal of this chapter is to implement the ``Design 6'' adder. As per the workshop requirements, we will explore two implementations of the function $F = A + B + C + D$:
+\begin{enumerate}
+    \item \textbf{Combinational Variant:} A direct implementation for baseline comparison.
+    \item \textbf{Sequential Variant (Resource Optimized):} A resource-shared architecture using a multiplexer, a single adder, and an accumulator register, as depicted in the design specifications.
+\end{enumerate}
+
+\section{Installation}
+Ensure the following open-source tools are installed for simulation and waveform viewing:
+\begin{itemize}
+    \item \textbf{Icarus Verilog:} For compiling and simulating the RTL.
+    \item \textbf{GTKWave:} For viewing the generated waveforms (.vcd files).
+\end{itemize}
+
+\section{Files to Add}
+Create a directory named \texttt{rtl/} in your project root. We will create the following files:
+\begin{itemize}
+    \item \texttt{rtl/design6\_comb.v} (Combinational reference)
+    \item \texttt{rtl/design6\_seq.v} (The main resource-optimized design)
+    \item \texttt{rtl/tb\_design6.v} (Testbench)
+\end{itemize}
+
+\section{Demonstration Steps}
+
+\subsection{Step 1: Combinational Implementation}
+First, we define the simple combinational adder. This serves as a baseline for area and timing comparisons later in the flow.
+
+\begin{lstlisting}[language=Verilog, caption=Combinational Adder (design6\_comb.v)]
+module design6_comb #(parameter WIDTH=4) (
+    input [WIDTH-1:0] A, B, C, D,
+    output [WIDTH+1:0] F // Output width increased to handle overflow
+);
+    // Direct summation
+    assign F = A + B + C + D;
+
+endmodule
+\end{lstlisting}
+
+\subsection{Step 2: Sequential Implementation (Resource Optimized)}
+This version implements the architecture shown in the "Design 6" specification. It uses a Control Unit to cycle through inputs A, B, C, and D, utilizing a single adder to accumulate the result over four clock cycles.
+
+\begin{lstlisting}[language=Verilog, caption=Sequential Resource Optimized Adder (design6\_seq.v)]
+module design6_seq #(parameter WIDTH=4) (
+    input wire clk,
+    input wire rst_n,       // Active low reset
+    input wire start,       // Start signal
+    input wire [WIDTH-1:0] A, B, C, D,
+    output reg [WIDTH+1:0] F,
+    output reg valid        // High when result is ready
+);
+
+    // --- Internal Signals ---
+    reg [1:0]  mux_sel;
+    reg        clear_acc;   // Clear signal for register
+    reg        enable_acc;  // Enable signal for register
+    reg        load_output; // Signal to update final output F
+    
+    reg [WIDTH-1:0] mux_out;
+    wire [WIDTH+1:0] add_out;
+    reg [WIDTH+1:0] acc_reg; // Accumulator Register
+
+    // --- State Machine States ---
+    localparam IDLE  = 3'd0,
+               ADD_A = 3'd1,
+               ADD_B = 3'd2,
+               ADD_C = 3'd3,
+               ADD_D = 3'd4,
+               DONE  = 3'd5;
+               
+    reg [2:0] current_state, next_state;
+
+    // --- Datapath ---
+    
+    // 1. Multiplexer (MUX)
+    always @(*) begin
+        case (mux_sel)
+            2'b00: mux_out = A;
+            2'b01: mux_out = B;
+            2'b10: mux_out = C;
+            2'b11: mux_out = D;
+        endcase
+    end
+
+    // 2. Adder (ADD)
+    // Adds MUX output to current Accumulator value
+    assign add_out = mux_out + acc_reg;
+
+    // 3. Register (Reg)
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            acc_reg <= 0;
+        end else if (clear_acc) begin
+            acc_reg <= 0;
+        end else if (enable_acc) begin
+            acc_reg <= add_out;
+        end
+    end
+
+    // Output Logic
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            F <= 0;
+            valid <= 0;
+        end else if (load_output) begin
+            F <= acc_reg;
+            valid <= 1;
+        end else begin
+            valid <= 0;
+        end
+    end
+
+    // --- Control Unit ---
+    
+    // State Transition
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n)
+            current_state <= IDLE;
+        else
+            current_state <= next_state;
+    end
+
+    // Next State & Output Logic
+    always @(*) begin
+        // Defaults
+        next_state = current_state;
+        mux_sel = 2'b00;
+        clear_acc = 0;
+        enable_acc = 0;
+        load_output = 0;
+
+        case (current_state)
+            IDLE: begin
+                clear_acc = 1; // Keep accumulator cleared
+                if (start) next_state = ADD_A;
+            end
+
+            ADD_A: begin
+                mux_sel = 2'b00; // Select A
+                enable_acc = 1;  // Store (0 + A)
+                next_state = ADD_B;
+            end
+
+            ADD_B: begin
+                mux_sel = 2'b01; // Select B
+                enable_acc = 1;  // Store (A + B)
+                next_state = ADD_C;
+            end
+
+            ADD_C: begin
+                mux_sel = 2'b10; // Select C
+                enable_acc = 1;  // Store (AB + C)
+                next_state = ADD_D;
+            end
+
+            ADD_D: begin
+                mux_sel = 2'b11; // Select D
+                enable_acc = 1;  // Store (ABC + D)
+                next_state = DONE;
+            end
+
+            DONE: begin
+                load_output = 1; // Move result to Output F
+                next_state = IDLE;
+            end
+        endcase
+    end
+
+endmodule
+\end{lstlisting}
+
+\subsection{Step 3: Simulation}
+To verify the design, run the testbench (source provided in \texttt{rtl/tb\_design6.v}) using Icarus Verilog:
+
+\begin{lstlisting}[language=bash]
+iverilog -o design6_sim rtl/tb_design6.v rtl/design6_seq.v
+vvp design6_sim
+gtkwave design6.vcd
+\end{lstlisting}
+
+\subsection{Expected Outputs}
+\begin{itemize}
+    \item \textbf{Waveforms:} You should observe the state machine transitioning from IDLE $\to$ ADD\_A $\to$ ... $\to$ DONE.
+    \item \textbf{Latency:} The sequential design will have a latency of approximately 5 clock cycles, whereas the combinational design (if simulated) would be instantaneous.
+    \item \textbf{Synthesis Preparation:} This sequential module \texttt{design6\_seq} will be the primary target for the Netlist Generation step in Chapter 3.
+\end{itemize}

@@ -1,0 +1,48 @@
+\documentclass[11pt,a4paper,oneside]{book}
+
+% Packages
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{color,xcolor}
+\usepackage{listings}
+\usepackage{caption}
+\usepackage{subcaption}
+
+% Listings config for Verilog
+\lstset{language=Verilog, basicstyle=\ttfamily\small, keywordstyle=\color{blue}, numbers=left, numberstyle=\tiny, frame=single}
+
+% Document meta
+\title{ICIIS Workshop Guidebook: RTL2GDS\thanks{Prepared for the ICIIS workshop.}}
+\author{Thimira / Isuru Dasanayake, PhD}
+\date{\today}
+
+\begin{document}
+
+\frontmatter
+\maketitle
+\thispagestyle{empty}
+\cleardoublepage
+
+\tableofcontents
+\cleardoublepage
+
+\mainmatter
+
+% Chapters
+\include{chapters/ch01_introduction}
+\include{chapters/ch02_verilog_demonstration}
+\include{chapters/ch03_netlist_generation}
+\include{chapters/ch04_sta}
+\include{chapters/ch05_placement_power}
+\include{chapters/ch06_routing_cts}
+\include{chapters/ch99_appendix_tools}
+
+\backmatter
+
+\chapter*{Acknowledgements}
+This guidebook was prepared for the ICIIS workshop. Add acknowledgements here.
+
+\end{document}
