@@ -1,47 +1,72 @@
 \chapter{Verilog Demonstration: Design 6 Adder}
 
 \section{Goals}
-The goal of this chapter is to implement the ``Design 6'' adder. As per the workshop requirements, we will explore two implementations of the function $F = A + B + C + D$:
+The goal of this chapter is to implement and verify the ``Design 6'' adder. We will:
 \begin{enumerate}
-    \item \textbf{Combinational Variant:} A direct implementation for baseline comparison.
-    \item \textbf{Sequential Variant (Resource Optimized):} A resource-shared architecture using a multiplexer, a single adder, and an accumulator register, as depicted in the design specifications.
+    \item Implement the \textbf{Combinational} variant (baseline).
+    \item Implement the \textbf{Sequential Resource-Optimized} variant using a MUX-Adder-Register architecture.
+    \item Perform simulation-based verification using \textbf{Icarus Verilog} and \textbf{GTKWave}.
+    \item Analyze code coverage using the open-source tool \textbf{Covered}.
 \end{enumerate}
 
 \section{Installation}
-Ensure the following open-source tools are installed for simulation and waveform viewing:
-\begin{itemize}
-    \item \textbf{Icarus Verilog:} For compiling and simulating the RTL.
-    \item \textbf{GTKWave:} For viewing the generated waveforms (.vcd files).
-\end{itemize}
+This section details the installation of the open-source toolchain on a Linux (Ubuntu/Debian) system.
 
-\section{Files to Add}
-Create a directory named \texttt{rtl/} in your project root. We will create the following files:
-\begin{itemize}
-    \item \texttt{rtl/design6\_comb.v} (Combinational reference)
-    \item \texttt{rtl/design6\_seq.v} (The main resource-optimized design)
-    \item \texttt{rtl/tb\_design6.v} (Testbench)
-\end{itemize}
-
-\section{Demonstration Steps}
-
-\subsection{Step 1: Combinational Implementation}
-First, we define the simple combinational adder. This serves as a baseline for area and timing comparisons later in the flow.
-
-\begin{lstlisting}[language=Verilog, caption=Combinational Adder (design6\_comb.v)]
-module design6_comb #(parameter WIDTH=4) (
-    input [WIDTH-1:0] A, B, C, D,
-    output [WIDTH+1:0] F // Output width increased to handle overflow
-);
-    // Direct summation
-    assign F = A + B + C + D;
-
-endmodule
+\subsection{Prerequisites}
+First, update your package list and install the necessary build dependencies:
+\begin{lstlisting}[language=bash]
+sudo apt-get update
+sudo apt-get install git gperf autoconf gcc g++ flex bison make
 \end{lstlisting}
 
-\subsection{Step 2: Sequential Implementation (Resource Optimized)}
-This version implements the architecture shown in the "Design 6" specification. It uses a Control Unit to cycle through inputs A, B, C, and D, utilizing a single adder to accumulate the result over four clock cycles.
+\subsection{Icarus Verilog (Simulator)}
+We will build Icarus Verilog from source to ensure we have the latest version.
+\begin{lstlisting}[language=bash]
+# Clone the repository
+git clone https://github.com/steveicarus/iverilog.git
+cd iverilog
 
-\begin{lstlisting}[language=Verilog, caption=Sequential Resource Optimized Adder (design6\_seq.v)]
+# Build configuration files
+sh autoconf.sh
+
+# Configure and compile
+./configure
+make
+
+# Install
+sudo make install
+\end{lstlisting}
+
+\subsection{GTKWave (Waveform Viewer)}
+Install GTKWave using the package manager:
+\begin{lstlisting}[language=bash]
+sudo apt install gtkwave
+\end{lstlisting}
+
+\subsection{Covered (Code Coverage)}
+We will install ``Covered'' to check if our testbench stimulates the design sufficiently.
+
+\noindent \textbf{1. Install Dependencies}:
+\begin{lstlisting}[language=bash]
+sudo apt-get install zlib1g-dev tcl8.6 tcl8.6-dev tk8.6 tk8.6-dev doxygen
+\end{lstlisting}
+
+\noindent \textbf{2. Build and Install}:
+\begin{lstlisting}[language=bash]
+git clone https://github.com/chiphackers/covered.git
+cd covered
+./configure
+make
+sudo make install
+\end{lstlisting}
+
+\section{Design Files}
+All RTL assets live under \texttt{RTL2GDS\_WS\_Files/rtl/}. The folder already contains the following files:
+
+\subsection{1. Sequential Adder (design6\_seq.v)}
+This code implements the resource-optimized architecture shown in the workshop diagram (MUX $\rightarrow$ Adder $\rightarrow$ Register).
+
+\begin{lstlisting}[language=Verilog, caption=Sequential Adder (design6\_seq.v)]
 module design6_seq #(parameter WIDTH=4) (
     input wire clk,
     input wire rst_n,       // Active low reset
@@ -51,29 +76,23 @@ module design6_seq #(parameter WIDTH=4) (
     output reg valid        // High when result is ready
 );
 
-    // --- Internal Signals ---
-    reg [1:0]  mux_sel;
-    reg        clear_acc;   // Clear signal for register
-    reg        enable_acc;  // Enable signal for register
-    reg        load_output; // Signal to update final output F
+    // --- Signals matching Diagram ---
+    reg [1:0]  mux_sel;     // "Set Control"
+    reg        clear_acc;   // "CLEAR"
+    reg        enable_acc;  // "ENABLE"
+    reg        load_output; 
     
     reg [WIDTH-1:0] mux_out;
     wire [WIDTH+1:0] add_out;
-    reg [WIDTH+1:0] acc_reg; // Accumulator Register
+    reg [WIDTH+1:0] acc_reg; // "Reg"
 
-    // --- State Machine States ---
-    localparam IDLE  = 3'd0,
-               ADD_A = 3'd1,
-               ADD_B = 3'd2,
-               ADD_C = 3'd3,
-               ADD_D = 3'd4,
-               DONE  = 3'd5;
-               
+    // --- State Machine ---
+    localparam IDLE=0, ADD_A=1, ADD_B=2, ADD_C=3, ADD_D=4, DONE=5;
     reg [2:0] current_state, next_state;
 
     // --- Datapath ---
     
-    // 1. Multiplexer (MUX)
+    // 1. MUX
     always @(*) begin
         case (mux_sel)
             2'b00: mux_out = A;
@@ -83,105 +102,148 @@ module design6_seq #(parameter WIDTH=4) (
         endcase
     end
 
-    // 2. Adder (ADD)
-    // Adds MUX output to current Accumulator value
+    // 2. ADDER & 3. REG (Accumulator)
     assign add_out = mux_out + acc_reg;
 
-    // 3. Register (Reg)
     always @(posedge clk or negedge rst_n) begin
-        if (!rst_n) begin
-            acc_reg <= 0;
-        end else if (clear_acc) begin
-            acc_reg <= 0;
-        end else if (enable_acc) begin
-            acc_reg <= add_out;
-        end
+        if (!rst_n)      acc_reg <= 0;
+        else if (clear_acc) acc_reg <= 0;
+        else if (enable_acc) acc_reg <= add_out;
     end
 
-    // Output Logic
+    // Output Latch
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
-            F <= 0;
-            valid <= 0;
+            F <= 0; valid <= 0;
         end else if (load_output) begin
-            F <= acc_reg;
-            valid <= 1;
+            F <= acc_reg; valid <= 1;
         end else begin
             valid <= 0;
         end
     end
 
     // --- Control Unit ---
-    
-    // State Transition
     always @(posedge clk or negedge rst_n) begin
-        if (!rst_n)
-            current_state <= IDLE;
-        else
-            current_state <= next_state;
+        if (!rst_n) current_state <= IDLE;
+        else        current_state <= next_state;
     end
 
-    // Next State & Output Logic
     always @(*) begin
-        // Defaults
         next_state = current_state;
-        mux_sel = 2'b00;
-        clear_acc = 0;
-        enable_acc = 0;
-        load_output = 0;
+        mux_sel = 0; clear_acc = 0; enable_acc = 0; load_output = 0;
 
         case (current_state)
             IDLE: begin
-                clear_acc = 1; // Keep accumulator cleared
+                clear_acc = 1;
                 if (start) next_state = ADD_A;
             end
-
             ADD_A: begin
-                mux_sel = 2'b00; // Select A
-                enable_acc = 1;  // Store (0 + A)
-                next_state = ADD_B;
+                mux_sel = 2'b00; enable_acc = 1; next_state = ADD_B;
             end
-
             ADD_B: begin
-                mux_sel = 2'b01; // Select B
-                enable_acc = 1;  // Store (A + B)
-                next_state = ADD_C;
+                mux_sel = 2'b01; enable_acc = 1; next_state = ADD_C;
             end
-
             ADD_C: begin
-                mux_sel = 2'b10; // Select C
-                enable_acc = 1;  // Store (AB + C)
-                next_state = ADD_D;
+                mux_sel = 2'b10; enable_acc = 1; next_state = ADD_D;
             end
-
             ADD_D: begin
-                mux_sel = 2'b11; // Select D
-                enable_acc = 1;  // Store (ABC + D)
-                next_state = DONE;
+                mux_sel = 2'b11; enable_acc = 1; next_state = DONE;
             end
-
             DONE: begin
-                load_output = 1; // Move result to Output F
-                next_state = IDLE;
+                load_output = 1; next_state = IDLE;
             end
         endcase
     end
-
 endmodule
 \end{lstlisting}
 
-\subsection{Step 3: Simulation}
-To verify the design, run the testbench (source provided in \texttt{rtl/tb\_design6.v}) using Icarus Verilog:
+\subsection{2. Testbench (tb\_design6.v)}
+The testbench (also under \texttt{rtl/}) generates the clock and stimulus, and dumps the VCD file for analysis.
 
-\begin{lstlisting}[language=bash]
-iverilog -o design6_sim rtl/tb_design6.v rtl/design6_seq.v
-vvp design6_sim
-gtkwave design6.vcd
+\begin{lstlisting}[language=Verilog, caption=Testbench (tb\_design6.v)]
+`timescale 1ns/1ps
+
+module tb_design6;
+    reg clk, rst_n, start;
+    reg [3:0] A, B, C, D;
+    wire [5:0] F;
+    wire valid;
+
+    // Instantiate Design
+    design6_seq #(.WIDTH(4)) uut (
+        .clk(clk), .rst_n(rst_n), .start(start),
+        .A(A), .B(B), .C(C), .D(D),
+        .F(F), .valid(valid)
+    );
+
+    // Clock Generation
+    always #5 clk = ~clk; 
+
+    initial begin
+        // Dumpfile for GTKWave and Covered
+        $dumpfile("design6.vcd");
+        $dumpvars(0, tb_design6);
+
+        // Initialize
+        clk = 0; rst_n = 0; start = 0;
+        A=0; B=0; C=0; D=0;
+
+        // Reset
+        #20 rst_n = 1;
+        
+        // Test Case 1: 1+2+3+4 = 10
+        #10 A=1; B=2; C=3; D=4;
+        #10 start = 1;
+        #10 start = 0;
+        
+        wait(valid);
+        $display("Test 1: Input=1,2,3,4 | Output=%d | Expected=10", F);
+
+        // Test Case 2: 10+10+10+10 = 40
+        #20 A=10; B=10; C=10; D=10;
+        #10 start = 1;
+        #10 start = 0;
+
+        wait(valid);
+        $display("Test 2: Input=10,10,10,10 | Output=%d | Expected=40", F);
+
+        #50 $finish;
+    end
+endmodule
 \end{lstlisting}
 
-\subsection{Expected Outputs}
-\begin{itemize}
-    \item \textbf{Waveforms:} You should observe the state machine transitioning from IDLE $\to$ ADD\_A $\to$ ... $\to$ DONE.
-    \item \textbf{Latency:} The sequential design will have a latency of approximately 5 clock cycles, whereas the combinational design (if simulated) would be instantaneous.
-    \item \textbf{Synthesis Preparation:} This sequential module \texttt{design6\_seq} will be the primary target for the Netlist Generation step in Chapter 3.
-\end{itemize}
+\section{Demonstration Steps}
+
+\subsection{1. Compile and Simulate}
+From \texttt{RTL2GDS\_WS\_Files/rtl/}, run the following commands to compile the design and run the simulation:
+
+\begin{lstlisting}[language=bash]
+# Compile (-o sets the output executable name)
+iverilog -o design6_sim tb_design6.v design6_seq.v
+
+# Execute simulation
+vvp design6_sim
+\end{lstlisting}
+
+\subsection{2. View Waveforms}
+Open the generated VCD file in GTKWave:
+\begin{lstlisting}[language=bash]
+gtkwave design6.vcd
+\end{lstlisting}
+In the waveform viewer, observe the \texttt{current\_state} transitions (IDLE $\rightarrow$ ADD\_A $\rightarrow$ ...) and verify that \texttt{acc\_reg} accumulates the values at each clock cycle.
+
+\subsection{3. Check Code Coverage}
+Finally, we use the ``Covered'' tool to verify how much of our design code was exercised by the testbench.
+
+\textbf{Step 1: Score the design}
+\begin{lstlisting}[language=bash]
+# -t: top module name, -v: source files, -vcd: dump file
+covered score -t tb_design6 -v design6_seq.v -v tb_design6.v -vcd design6.vcd -o design6.cdd
+\end{lstlisting}
+
+\textbf{Step 2: Generate Report}
+\begin{lstlisting}[language=bash]
+covered report -d v design6.cdd
+\end{lstlisting}
+
+This will launch the GUI report viewer (or print to terminal if configured differently), showing line, toggle, and FSM coverage statistics.

@@ -1,16 +1,81 @@
 \chapter{Placement and Power Planning}
-\label{ch:placement}
 
-Following Week 11 tutorial, this chapter will detail placement strategies, power planning (power rails, power domains, decoupling), and preparing for routing.
+\section{Overview}
+In this chapter, we move from the logical world (netlists) to the physical world. We will use **OpenROAD** to perform:
+\begin{itemize}
+    \item \textbf{Floorplanning:} Defining the die area and core size.
+    \item \textbf{Power Planning (PDN):} Creating the power ring and grid (VDD/VSS).
+    \item \textbf{Placement:} Placing the standard cells into rows, first roughly (Global) and then precisely (Detailed).
+\end{itemize}
 
 \section{Installation}
-Tools: OpenROAD/OpenLane (for open flow) or commercial place-and-route tools.
+We will install the OpenROAD application locally, following the steps from the NPTEL tutorial.
+
+\subsection{1. Clone Repository}
+OpenROAD requires a recursive clone to fetch all submodules.
+\begin{lstlisting}[language=bash]
+git clone --recursive https://github.com/The-OpenROAD-Project/OpenROAD.git
+cd OpenROAD
+\end{lstlisting}
+
+\subsection{2. Install Dependencies}
+OpenROAD provides a script to install all required Linux libraries.
+\begin{lstlisting}[language=bash]
+sudo ./etc/DependencyInstaller.sh
+\end{lstlisting}
+
+\subsection{3. Build and Install}
+Create a build directory and compile using CMake.
+\begin{lstlisting}[language=bash]
+mkdir build
+cd build
+cmake ..
+make
+sudo make install
+\end{lstlisting}
+    extit{Note: The compilation process may take considerable time depending on your machine specifications.}
+
+\section{Files to Add}
+For physical design, we need specific technology files (LEF) which define the physical dimensions of the standard cells.
+
+\subsection{1. Technology Files}
+Ensure the following SkyWater SKY130 HD files are available in \texttt{RTL2GDS\_WS\_Files/lib/} (they are included in the shared workspace):
+\begin{itemize}
+    \item \texttt{sky130\_v5\_5.lef} (technology + routing layers)
+    \item \texttt{output.lef} (standard cell LEF views)
+    \item \texttt{sky130\_fd\_sc\_hd\_\_tt\_025C\_1v80.lib} (Liberty timing/power)
+\end{itemize}
+
+\subsection{2. Configuration Files}
+The \texttt{openroad/} directory in the bundle already includes the automation scripts:
+\begin{itemize}
+    \item \texttt{openroad/pdn\_config.tcl}: Defines the power grid structure.
+    \item \texttt{openroad/run\_placement.tcl}: Drives the OpenROAD placement flow.
+\end{itemize}
 
 \section{Steps}
-1. Prepare LEF/DEF and floorplan.
-2. Define power rails and power domains.
-3. Run placement and capture utilization/area reports.
+
+\subsection{1. Run the Placement Flow}
+Navigate to the \texttt{openroad/} directory and execute the script:
+\begin{lstlisting}[language=bash]
+openroad -gui
+% source run_placement.tcl
+\end{lstlisting}
+Using the \texttt{-gui} flag allows you to visualize the changes in real-time.
+
+\subsection{2. Visualization Stages}
+As the script runs, you will observe the following stages in the GUI:
+
+\begin{enumerate}
+    \item \textbf{Floorplan initialization:} The core boundary is defined.
+    \item \textbf{Tap Cell Insertion:} Well-tap cells are added to the boundary to prevent latch-up.
+    \item \textbf{PDN Generation:} A power grid (metal tracks for VDD/VSS) is drawn over the core.
+    \item \textbf{Global Placement:} Cells are spread out roughly (shown as red blocks), often with some overlaps initially.
+    \item \textbf{Detailed Placement:} Cells are snapped into valid rows and overlaps are removed.
+\end{enumerate}
 
 \section{Deliverables}
-- Floorplan images
-- Placement reports and power netlist
+\begin{itemize}
+    \item \textbf{Screenshots:} Capture the final layout showing standard cells placed inside the core area.
+    \item \textbf{DEF File:} The script generates \texttt{design6\_placed.def}, which contains the physical location of every cell.
+\end{itemize}

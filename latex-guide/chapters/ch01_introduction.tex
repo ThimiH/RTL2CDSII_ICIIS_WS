@@ -1,19 +1,47 @@
 \chapter{Introduction}
 
 \section{Scope and Objectives}
-This guidebook documents the step-by-step flow used in the ICIIS workshop: starting from RTL (Verilog), performing synthesis and netlist generation, Static Timing Analysis (STA), placement and power planning, and finishing with routing and Clock-Tree Synthesis (CTS)[cite: 10].
+This guidebook documents the step-by-step flow used in the ICIIS workshop: starting from RTL (Verilog), performing synthesis and netlist generation, Static Timing Analysis (STA), placement and power planning, and finishing with routing and Clock-Tree Synthesis (CTS).
 
 The primary objective is to provide a comprehensive workflow for converting a Register Transfer Level design into a GDSII layout using specific demonstration designs.
 
 \section{How to Use This Guide}
-Each chapter contains an ``Installation'' subsection with required tools and environment setup, followed by step-by-step instructions and expected outputs[cite: 14].
+Each chapter contains an ``Installation'' subsection with required tools and environment setup, followed by step-by-step instructions and expected outputs.
 
 \section{Installation Overview}
 To follow this workshop, the following general prerequisites are required:
 \begin{itemize}
     \item \textbf{General Tools:} TeX live (for documentation), git.
-    \item \textbf{Open-Source EDA Tools:} Icarus Verilog, GTKWave, Yosys, OpenSTA, OpenROAD, OpenLane[cite: 17, 91].
-    \item \textbf{Commercial Tools (Optional/Reference):} Synopsys Design Compiler, PrimeTime, and IC Compiler II (used for comparison or specific visualizations like the IO package view if open tools are insufficient)[cite: 17, 86, 98].
+    \item \textbf{Open-Source EDA Tools:} Icarus Verilog, GTKWave, Yosys, OpenSTA, OpenROAD, OpenLane.
+    \item \textbf{Commercial Tools (Optional/Reference):} Synopsys Design Compiler, PrimeTime, and IC Compiler II (used for comparison or specific visualizations like the IO package view if open tools are insufficient).
 \end{itemize}
 
 Detailed installation instructions for specific tools are provided at the beginning of their respective chapters.
+
+\section{Workshop File Layout}
+The PDF version of this guide is meant to live in the same directory as the provided \texttt{RTL2GDS\_WS\_Files/} folder. The bundle already contains the scripts and RTL referenced throughout the chapters:
+
+\begin{lstlisting}[language=bash]
+RTL2GDS_WS_Files/
+|-- rtl/
+|   |-- design6_comb.v
+|   |-- design6_seq.v
+|   `-- tb_design6.v
+|-- synth/
+|   `-- run_synth.tcl
+|-- sta/
+|   |-- design6.sdc
+|   `-- run_sta.tcl
+|-- openroad/
+|   |-- pdn_config.tcl
+|   |-- run_placement.tcl
+|   `-- run_routing.tcl
+`-- (lib/ to be added by the user)
+\end{lstlisting}
+
+\noindent The technology libraries are now shipped with the workshop files. Inside \texttt{RTL2GDS\_WS\_Files/lib/} you will find the SkyWater SKY130 HD assets referenced throughout this guide:
+\begin{itemize}
+    \item \texttt{sky130\_fd\_sc\_hd\_\_tt\_025C\_1v80.lib} (Liberty timing/power)
+    \item \texttt{sky130\_v5\_5.lef} and \texttt{output.lef} (technology + standard cell LEFs)
+    \item \texttt{sky130\_fd\_sc\_hd.tf} plus auxiliary files such as \texttt{sky130\_fd\_sc\_hd\_\_tt\_025C\_1v80.db}
+\end{itemize}

@@ -1,15 +1,119 @@
 \chapter{Static Timing Analysis (STA)}
-\label{ch:sta}
 
-This chapter references the Week 7 tutorial for STA. Steps here should show how to prepare timing libraries, constraints (SDC), run STA and interpret reports.
+\section{Overview}
+In this chapter, we verify that our synthesized netlist meets timing requirements using **OpenSTA**. We will check for:
+\begin{itemize}
+    \item \textbf{Setup Violations:} Can the signal propagate through the logic within one clock cycle?
+    \item \textbf{Hold Violations:} Does the signal stay stable long enough after the clock edge?
+\end{itemize}
 
 \section{Installation}
-Tools: OpenSTA (open-source), or commercial PrimeTime. Provide install or obtain instructions.
+We will install OpenSTA by building it from source, as demonstrated in NPTEL Lecture 31.
+
+\subsection{1. Install Dependencies}
+Ensure you have the build tools installed (CMake, Make, GCC/G++). If not already installed:
+\begin{lstlisting}[language=bash]
+sudo apt-get install cmake clang bison flex zlib1g-dev
+\end{lstlisting}
+
+\subsection{2. Build OpenSTA}
+Clone the repository and build using CMake.
+\begin{lstlisting}[language=bash]
+# 1. Clone the repository
+git clone https://github.com/The-OpenROAD-Project/OpenSTA.git
+cd OpenSTA
+
+# 2. Create build directory
+mkdir build
+cd build
+
+# 3. Configure and Compile
+cmake ..
+make
+
+# 4. Install
+sudo make install
+\end{lstlisting}
+
+\subsection{3. Verify Installation}
+Type \texttt{sta} in your terminal. You should see the OpenSTA prompt. Type \texttt{exit} to quit.
+
+\section{Files to Add}
+We need to create two new files: a Synopsys Design Constraint (SDC) file to define our timing requirements, and a TCL script to run the analysis.
+
+\subsection{1. Constraint File (sta/design6.sdc)}
+The bundle already includes \texttt{RTL2GDS\_WS\_Files/sta/design6.sdc}, which defines a 10ns (100 MHz) clock period.
+
+\begin{lstlisting}[language=tcl, caption=Timing Constraints (design6.sdc)]
+# 1. Define the Clock
+# Period: 10ns (100 MHz), applied to port 'clk'
+create_clock -name clk -period 10 [get_ports clk]
+
+# 2. Input Delays
+# Assume inputs arrive 2ns after the previous clock edge
+set_input_delay -clock clk 2 [get_ports {A B C D start rst_n}]
+
+# 3. Output Delays
+# Assume outputs must be stable 2ns before the next clock edge
+set_output_delay -clock clk 2 [get_ports {F valid}]
+\end{lstlisting}
+
+\subsection{2. STA Script (\texorpdfstring{\texttt{sta/run\_sta.tcl}}{sta/run_sta.tcl})}
+In the same directory, \texttt{run\_sta.tcl} automates the OpenSTA session by loading the SkyWater library, synthesized netlist, and constraints.
+
+\begin{lstlisting}[language=tcl, caption=STA Run Script (run\_sta.tcl)]
+# 1. Read the Standard Cell Library
+# (Update path to match your system)
+read_liberty ../lib/sky130_fd_sc_hd__tt_025C_1v80.lib
+
+# 2. Read the Synthesized Netlist (from Chapter 3)
+read_verilog ../synth/design6_netlist.v
+
+# 3. Link the Design
+link_design design6_seq
+
+# 4. Read Constraints
+read_sdc design6.sdc
+
+# 5. Report Checks
+# Check for Setup Violations (Max Delay)
+report_checks -path_delay max -format full
+
+# Check for Hold Violations (Min Delay)
+report_checks -path_delay min -format full
+
+# 6. Exit
+exit
+\end{lstlisting}
+
+\noindent Ensure the path \texttt{../lib/sky130\_fd\_sc\_hd\_\_tt\_025C\_1v80.lib} points to the Liberty file located in \texttt{RTL2GDS\_WS\_Files/lib/}.
 
 \section{Steps}
-1. Create SDC constraints (clock definitions, input/output delays, false paths).
-2. Run STA and capture worst negative slack (WNS), total negative slack (TNS), and report per path.
-3. Interpret and iterate (e.g., fix paths by buffer insertion or constraint adjustments).
+\begin{enumerate}
+    \item Navigate to \texttt{RTL2GDS\_WS\_Files/sta/}.
+    \item Run OpenSTA with the script:
+\begin{lstlisting}[language=bash]
+sta -f run_sta.tcl
+\end{lstlisting}
+\end{enumerate}
 
-\section{Expected outputs}
-- STA reports and annotated netlists.
+\section{Expected Outputs}
+You will see a detailed text report in the terminal.
+
+\subsection{1. Setup Check (Max Delay)}
+Look for the \textbf{Slack (VIOLATED)} or \textbf{Slack (MET)} line.
+\begin{itemize}
+    \item \textbf{Data Required Time:} Clock Period - Library Setup Time.
+    \item \textbf{Data Arrival Time:} Path Delay + Input Delay.
+    \item \textbf{Slack:} (Data Required) - (Data Arrival).
+\end{itemize}
+
+If Slack is positive, the design meets the setup timing.
+
+\subsection{2. Hold Check (Min Delay)}
+Look for the hold check report.
+\begin{itemize}
+    \item \textbf{Slack:} (Data Arrival) - (Data Required).
+\end{itemize}
+
+If Slack is positive, the design meets hold timing.

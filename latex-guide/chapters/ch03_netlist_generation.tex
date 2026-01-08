@@ -1,15 +1,90 @@
-\chapter{Netlist generation}
-\label{ch:netlist}
+\chapter{Netlist Generation}
 
-This chapter follows the Week 5 NPTEL tutorial on netlist generation. Document the flow used to generate gate-level netlists from RTL using open-source or commercial tools.
+\section{Overview}
+In this chapter, we perform logic synthesis: the process of converting our High-Level RTL (Verilog) into a gate-level netlist mapped to a specific Standard Cell Library. We will use the open-source tool \textbf{Yosys}[cite: 286].
 
 \section{Installation}
-Tools: Yosys (open-source synthesis) or commercial synthesis (Synopsys Design Compiler). Provide install instructions and necessary libraries.
+We will install the Yosys Open Synthesis Suite on Ubuntu.
 
-\section{Steps}
-1. Run synthesis (Yosys script example placeholder).
-2. Produce gate-level netlist (Verilog or BLIF).
-3. Run basic linting and consistency checks.
+\subsection{1. Install Dependencies}
+First, install the required prerequisites for building Yosys[cite: 291]:
+\begin{lstlisting}[language=bash]
+sudo apt-get install build-essential clang bison flex \
+    libreadline-dev gawk tcl-dev libffi-dev git \
+    graphviz xdot pkg-config python3 libboost-system-dev \
+    libboost-python-dev libboost-filesystem-dev zlib1g-dev
+\end{lstlisting}
+
+\subsection{2. Build Yosys from Source}
+Clone the repository and compile the source code[cite: 293, 297, 299]:
+\begin{lstlisting}[language=bash]
+git clone https://github.com/YosysHQ/yosys.git
+cd yosys
+make
+sudo make install
+\end{lstlisting}
+
+\subsection{3. Standard Cell Library}
+Synthesis requires a technology library (Liberty format: \texttt{.lib}). This workshop now targets the \textbf{SkyWater SKY130 FD\_SC\_HD} process using the supplied \texttt{sky130\_fd\_sc\_hd\_\_tt\_025C\_1v80.lib} file.
+
+\noindent \textit{The \texttt{RTL2GDS\_WS\_Files/lib/} folder already contains this Liberty file, along with the matching LEF/tech data used in later chapters.}
+
+\section{Synthesis Steps}
+
+\subsection{1. Review the Synthesis Script}
+The shared workspace already includes \texttt{RTL2GDS\_WS\_Files/synth/run\_synth.tcl}, which automates the Yosys flow and expects the RTL in \texttt{../rtl/} relative to the script.
+
+\begin{lstlisting}[language=tcl, caption=Yosys Synthesis Script (run\_synth.tcl)]
+# 1. Read the Verilog source
+read_verilog ../rtl/design6_seq.v
+
+# 2. Elaborate the design hierarchy
+# Checks the design and sets the top module to 'design6_seq'
+hierarchy -check -top design6_seq
+
+# 3. Translate processes (always blocks) to internal netlist elements
+proc
+
+# 4. Map to internal cell library
+techmap
+
+# 5. Map Flip-Flops to the Standard Cell Library
+# Replace path with your actual library location
+dfflibmap -liberty ../lib/sky130_fd_sc_hd__tt_025C_1v80.lib
+
+# 6. Map Logic (combinational) to the Standard Cell Library
+abc -liberty ../lib/sky130_fd_sc_hd__tt_025C_1v80.lib
+
+# 7. Cleanup
+# Remove unused cells and wires
+clean
+
+# 8. Write the generated Netlist
+write_verilog -noattr design6_netlist.v
+\end{lstlisting}
+
+\subsection{2. Run Synthesis}
+Navigate to \texttt{RTL2GDS\_WS\_Files/synth/} and execute the script:
+\begin{lstlisting}[language=bash]
+cd synth
+yosys -s run_synth.tcl
+\end{lstlisting}
+Alternatively, you can launch the Yosys interactive shell and source the script manually[cite: 373]:
+\begin{lstlisting}[language=bash]
+yosys
+Yosys> script run_synth.tcl
+\end{lstlisting}
+
+\section{Expected Outputs}
+Upon successful execution, check the generated file \texttt{design6\_netlist.v}.
+
+\begin{itemize}
+    \item \textbf{Mapped Gates:} You should no longer see equations like \texttt{assign F = A + B}. Instead, you will see instantiated gates such as \texttt{NAND2\_X1}, \texttt{MUX2\_X1}, and \texttt{DFF\_X1}[cite: 376].
+    \item \textbf{Consistency:} The functionality remains the same as the RTL, but it is now structurally defined using the specific cells available in the SkyWater SKY130 HD library.
+\end{itemize}
 
 \section{Notes}
-Refer to Week 5 tutorial for recommended synthesis options and constraints.
+\begin{itemize}
+    \item \textbf{Warnings:} You may see warnings about specific wires or optimizations. Ensure there are no ``Errors'' preventing netlist generation.
+    \item \textbf{Timing Constraints:} At this stage, we have not yet applied strict timing constraints (SDC). The netlist is optimized primarily for area[cite: 359]. Timing optimization will be handled in the next chapter (STA).
+\end{itemize}
