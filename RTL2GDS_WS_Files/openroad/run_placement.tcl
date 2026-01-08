@@ -1,7 +1,7 @@
 # 1. Read Technology and Libraries
 # LEF files define the physical layers and cell dimensions
-read_lef ../lib/sky130_v5_5.lef
-read_lef ../lib/output.lef
+read_lef ../lib/sky130_fd_sc_hd.tlef
+read_lef ../lib/sky130_fd_sc_hd_merged.lef
 read_liberty ../lib/sky130_fd_sc_hd__tt_025C_1v80.lib
 
 # 2. Read the Design
@@ -17,9 +17,12 @@ read_sdc ../sta/design6.sdc
 # (Relaxed density for easier placement in a workshop)
 initialize_floorplan -utilization 30 -aspect_ratio 1.0 -core_space 5.0 -site unithd
 
+# Initialize routing tracks for all layers
+make_tracks
+
 # 5. Place IO Pins
-# Places input/output pins on the boundary randomly or optimally
-place_pins -random
+# Places input/output pins on the boundary using met4/met5 routing layers
+place_pins -hor_layers met5 -ver_layers met4
 
 # 6. Tap Cell Insertion
 # Inserts well taps to prevent latch-up
@@ -27,7 +30,8 @@ tapcell -distance 20 -tapcell_master sky130_fd_sc_hd__tapvpwrvgnd_1 -endcap_mast
 
 # 7. Power Distribution Network (PDN)
 # Generates the VDD/VSS grid based on the config file
-pdngen pdn_config.tcl
+source pdn_config.tcl
+pdngen
 
 # 8. Global Placement
 # Rough placement of cells (routability driven)

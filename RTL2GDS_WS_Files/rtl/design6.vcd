@@ -1,0 +1,197 @@
+$date
+	Thu Jan  8 13:23:28 2026
+$end
+$version
+	Icarus Verilog
+$end
+$timescale
+	1ps
+$end
+$scope module tb_design6 $end
+$var wire 1 ! valid $end
+$var wire 6 " F [5:0] $end
+$var parameter 32 # WIDTH $end
+$var reg 4 $ A [3:0] $end
+$var reg 4 % B [3:0] $end
+$var reg 4 & C [3:0] $end
+$var reg 4 ' D [3:0] $end
+$var reg 1 ( clk $end
+$var reg 1 ) rst_n $end
+$var reg 1 * start $end
+$scope module dut $end
+$var wire 4 + A [3:0] $end
+$var wire 4 , B [3:0] $end
+$var wire 4 - C [3:0] $end
+$var wire 4 . D [3:0] $end
+$var wire 1 ( clk $end
+$var wire 1 ) rst_n $end
+$var wire 1 * start $end
+$var wire 6 / add_out [5:0] $end
+$var parameter 3 0 ADD_A $end
+$var parameter 3 1 ADD_B $end
+$var parameter 3 2 ADD_C $end
+$var parameter 3 3 ADD_D $end
+$var parameter 3 4 DONE $end
+$var parameter 3 5 IDLE $end
+$var parameter 32 6 WIDTH $end
+$var reg 6 7 F [5:0] $end
+$var reg 6 8 acc_reg [5:0] $end
+$var reg 1 9 clear_acc $end
+$var reg 3 : current_state [2:0] $end
+$var reg 1 ; enable_acc $end
+$var reg 1 < load_output $end
+$var reg 4 = mux_out [3:0] $end
+$var reg 2 > mux_sel [1:0] $end
+$var reg 3 ? next_state [2:0] $end
+$var reg 1 ! valid $end
+$upscope $end
+$upscope $end
+$enddefinitions $end
+$comment Show the parameter values. $end
+$dumpall
+b100 6
+b0 5
+b101 4
+b100 3
+b11 2
+b10 1
+b1 0
+b100 #
+$end
+#0
+$dumpvars
+b0 ?
+b0 >
+b0 =
+0<
+0;
+b0 :
+19
+b0 8
+b0 7
+b0 /
+b0 .
+b0 -
+b0 ,
+b0 +
+0*
+0)
+0(
+b0 '
+b0 &
+b0 %
+b0 $
+b0 "
+0!
+$end
+#5000
+1(
+#10000
+0(
+#15000
+1)
+1(
+#20000
+0(
+#25000
+b1 ?
+19
+b11 /
+b11 =
+1*
+b10 '
+b10 .
+b111 &
+b111 -
+b101 %
+b101 ,
+b11 $
+b11 +
+1(
+#30000
+0(
+#35000
+1;
+b1 :
+09
+b10 ?
+0*
+1(
+#40000
+0(
+#45000
+b101 =
+b11 ?
+b1 >
+1;
+b10 :
+b1000 /
+b11 8
+1(
+#50000
+0(
+#55000
+b111 =
+b100 ?
+1;
+b10 >
+b1111 /
+b1000 8
+b11 :
+1(
+#60000
+0(
+#65000
+b10 =
+b101 ?
+1;
+b11 >
+b100 :
+b10001 /
+b1111 8
+1(
+#70000
+0(
+#75000
+b11 =
+b0 ?
+1<
+0;
+b0 >
+b10100 /
+b10001 8
+b101 :
+1(
+#80000
+0(
+#85000
+19
+0<
+b0 :
+1!
+b10001 "
+b10001 7
+1(
+#90000
+0(
+#95000
+b11 /
+b0 8
+0!
+1(
+#100000
+0(
+#105000
+1(
+#110000
+0(
+#115000
+1(
+#120000
+0(
+#125000
+1(
+#130000
+0(
+#135000
+1(

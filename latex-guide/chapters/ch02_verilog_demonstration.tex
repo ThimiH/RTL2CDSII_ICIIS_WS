@@ -232,6 +232,13 @@ gtkwave design6.vcd
 \end{lstlisting}
 In the waveform viewer, observe the \texttt{current\_state} transitions (IDLE $\rightarrow$ ADD\_A $\rightarrow$ ...) and verify that \texttt{acc\_reg} accumulates the values at each clock cycle.
 
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.9\textwidth]{images/ch02_gtkwave_waveform.png}
+    \caption{GTKWave waveform showing the state machine transitions and signal behavior during simulation. The waveform displays the sequential addition process with state transitions from IDLE through ADD\_A, ADD\_B, ADD\_C, ADD\_D to DONE states.}
+    \label{fig:ch02_gtkwave}
+\end{figure}
+
 \subsection{3. Check Code Coverage}
 Finally, we use the ``Covered'' tool to verify how much of our design code was exercised by the testbench.
 

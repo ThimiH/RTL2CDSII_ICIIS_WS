@@ -1,7 +1,7 @@
 \chapter{Routing and Clock Tree Synthesis (CTS)}
 
 \section{Overview}
-In this final implementation chapter, we complete the RTL-to-GDS flow. Following the placement of standard cells, we must now:
+In this final implementation chapter, we complete the RTL-to-GDSII flow. Following the placement of standard cells, we must now:
 \begin{enumerate}
     \item \textbf{Clock Tree Synthesis (CTS):} Distribute the clock signal to all sequential elements (Flip-Flops) with minimum skew and latency.
     \item \textbf{Routing:} Connect the signal pins using metal wires. This is performed in two stages:
@@ -9,50 +9,75 @@ In this final implementation chapter, we complete the RTL-to-GDS flow. Following
         \item \textbf{Global Routing:} Allocates routing resources and plans paths to manage congestion.
         \item \textbf{Detailed Routing:} Actually lays down the wires and vias, checking for Design Rule (DRC) violations.
     \end{itemize}
-    \item \textbf{Final GDSII Export:} Generating the binary file for manufacturing.
+    \item \textbf{Final DEF Export:} Generating the output file with the fully routed design.
 \end{enumerate}
 
-\section{Files to Add}
-The \texttt{openroad/} directory already provides \texttt{run\_routing.tcl} alongside the placement scripts, so you can reuse it directly.
+\section{Files Required}
+The \texttt{RTL2GDS\_WS\_Files/openroad/} directory contains \texttt{run\_routing.tcl} which performs all the steps below:
+\begin{itemize}
+    \item Loads the placed design from \texttt{design6\_placed.def}
+    \item Performs Clock Tree Synthesis (CTS)
+    \item Runs global and detailed routing
+    \item Generates timing reports and final DEF output
+\end{itemize}
 
 \section{Steps}
 
 \subsection{1. Execute the Routing Flow}
-Navigate to \texttt{RTL2GDS\_WS\_Files/openroad/} and execute the script.
+Navigate to \texttt{RTL2GDS\_WS\_Files/openroad/} and execute the script:
+\begin{lstlisting}[language=bash]
+cd RTL2GDS_WS_Files/openroad
+openroad -exit run_routing.tcl
+\end{lstlisting}
+
+For visualization during the flow, use the GUI mode:
 \begin{lstlisting}[language=bash]
 openroad -gui
 % source run_routing.tcl
 \end{lstlisting}
 
 \subsection{2. Analyzing CTS Results}
-Once the script reaches the CTS stage, use the \textbf{Clock Tree Viewer} in the GUI:
+Once the script reaches the CTS stage, the tool reports:
 \begin{itemize}
-    \item Go to the "Windows" menu or the top-right pane to find the Clock Tree Viewer.
-    \item Click "Update" to visualize the tree structure. You will see the clock root driving buffers (inverters), which then drive the Flip-Flops.
+    \item Number of clock buffers inserted (typically 2-4 for small designs)
+    \item Clock tree depth (number of buffer levels)
+    \item Average sink wire length
+    \item Path depth distribution
 \end{itemize}
+
+In GUI mode, use the \textbf{Clock Tree Viewer} from the "Windows" menu to visualize the tree structure showing the clock root driving buffers which then drive the Flip-Flops.
 
 \subsection{3. Analyzing Routing Results}
 After detailed routing completes:
 \begin{itemize}
     \item \textbf{Signal Nets:} Enable "Nets" in the Display Control panel to see the metal traces connecting the cells.
     \item \textbf{Heat Maps:} Use the "Heat Maps" tool to inspect \textbf{Routing Congestion}. Red areas indicate high congestion where the router struggled to find paths.
+    \item \textbf{DRC Report:} Check \texttt{design6.drc} for any design rule violations.
 \end{itemize}
 
-\section{Final Product: IO Package View}
-The final output of this flow is the \textbf{GDSII} file (\texttt{design6\_final.gds}).
+\section{Final Product: Layout View}
+The final output of this flow is the \textbf{DEF} file (\texttt{design6\_final.def}) which contains the complete routed design.
 
-To visualize the final "Chip" view:
+To visualize the final layout:
 \begin{enumerate}
-    \item In OpenROAD, ensure all layers (Metal1-Metal10, Vias) are visible.
-    \item Zoom out to see the entire die boundary, including the IO pins and the Power Ring.
-    \item Take a screenshot of this view.
+    \item In OpenROAD GUI, ensure all layers (met1-met5, vias) are visible.
+    \item Zoom out to see the entire die boundary, including the IO pins and the Power Distribution Network.
+    \item You can see the placed cells, power grid, and routing on multiple metal layers.
 \end{enumerate}
 
-\textit{Note: Open-source tools typically generate the Die Layout. For a full 3D IO-Package wire-bond visualization (as requested in the introduction), please refer to the Appendix for instructions using Synopsys tools, as OpenROAD focuses on the die-level implementation.}
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.85\textwidth]{images/ch06_routed.png}
+    \caption{Final routed design in OpenROAD GUI showing the complete physical implementation. The layout displays all metal layers (met1-met5) with signal routing, clock tree buffers, power distribution network, and fully connected standard cells. Different colors represent different metal layers and routing resources.}
+    \label{fig:ch06_routed}
+\end{figure}
+
+\textbf{Note:} To convert the DEF file to GDSII format for fabrication, you would typically use KLayout or Magic with the appropriate technology files.
 
 \section{Deliverables}
 \begin{itemize}
-    \item \textbf{Final Layout Screenshot:} Showing fully routed standard cells and power grid.
-    \item \textbf{Clock Tree Plot:} Screenshot from the Clock Tree Viewer.
-    \item \textbf{Final GDS File:} \texttt{design6\_final.gds}.
+    \item \textbf{Routed Design:} \texttt{design6\_final.def}
+    \item \textbf{DRC Report:} \texttt{design6.drc}
+    \item \textbf{Routing Guide:} \texttt{design6.guide}
+    \item \textbf{Timing Reports:} Final setup/hold timing with routed parasitics
 \end{itemize}

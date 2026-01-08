@@ -93,27 +93,28 @@ exit
     \item Navigate to \texttt{RTL2GDS\_WS\_Files/sta/}.
     \item Run OpenSTA with the script:
 \begin{lstlisting}[language=bash]
-sta -f run_sta.tcl
+cd RTL2GDS_WS_Files/sta
+sta run_sta.tcl
 \end{lstlisting}
 \end{enumerate}
 
 \section{Expected Outputs}
-You will see a detailed text report in the terminal.
+You will see detailed timing reports in the terminal showing the critical paths.
 
 \subsection{1. Setup Check (Max Delay)}
-Look for the \textbf{Slack (VIOLATED)} or \textbf{Slack (MET)} line.
+Look for the \textbf{Slack (VIOLATED)} or \textbf{Slack (MET)} line in the max delay report.
 \begin{itemize}
     \item \textbf{Data Required Time:} Clock Period - Library Setup Time.
     \item \textbf{Data Arrival Time:} Path Delay + Input Delay.
     \item \textbf{Slack:} (Data Required) - (Data Arrival).
 \end{itemize}
 
-If Slack is positive, the design meets the setup timing.
+If Slack is positive, the design meets the setup timing requirement.
 
 \subsection{2. Hold Check (Min Delay)}
-Look for the hold check report.
+Look for the hold check report (min delay).
 \begin{itemize}
     \item \textbf{Slack:} (Data Arrival) - (Data Required).
 \end{itemize}
 
-If Slack is positive, the design meets hold timing.
+If Slack is positive, the design meets hold timing requirement.

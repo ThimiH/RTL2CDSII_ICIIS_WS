@@ -1,11 +1,15 @@
 # 1. Load the Placed Design (From Chapter 5)
-read_lef ../lib/sky130_v5_5.lef
-read_lef ../lib/output.lef
+read_lef ../lib/sky130_fd_sc_hd.tlef
+read_lef ../lib/sky130_fd_sc_hd_merged.lef
 read_liberty ../lib/sky130_fd_sc_hd__tt_025C_1v80.lib
 
 # Load the DEF generated at the end of Chapter 5
 read_def design6_placed.def
 read_sdc ../sta/design6.sdc
+
+# Set wire RC parasitics for timing estimation (Sky130 HD typical values)
+set_wire_rc -signal -layer met2
+set_wire_rc -clock -layer met3
 
 # 2. Clock Tree Synthesis (CTS)
 puts "--- Starting Clock Tree Synthesis ---"
@@ -17,6 +21,9 @@ clock_tree_synthesis -root_buf sky130_fd_sc_hd__clkbuf_4 -buf_list {sky130_fd_sc
 set_propagated_clock [all_clocks]
 repair_timing -setup
 repair_timing -hold
+
+# Re-legalize placement after CTS inserted buffers
+detailed_placement
 
 # 4. Fillers (Optional but good practice)
 # Add filler cells to fill empty gaps in rows (ensures N-well continuity)
@@ -40,8 +47,8 @@ estimate_parasitics -global_routing
 report_checks -path_delay max -format full
 report_checks -path_delay min -format full
 
-# 9. GDSII Generation (The Final Product)
-# Maps the internal database to the manufacturing file format
-write_gds design6_final.gds
+# 9. Final DEF Output
+# Export the final routed design
+write_def design6_final.def
 
 puts "--- Flow Completed Successfully ---"

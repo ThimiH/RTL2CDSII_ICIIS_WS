@@ -1,13 +1,13 @@
 \chapter{Netlist Generation}
 
 \section{Overview}
-In this chapter, we perform logic synthesis: the process of converting our High-Level RTL (Verilog) into a gate-level netlist mapped to a specific Standard Cell Library. We will use the open-source tool \textbf{Yosys}[cite: 286].
+In this chapter, we perform logic synthesis: the process of converting our High-Level RTL (Verilog) into a gate-level netlist mapped to a specific Standard Cell Library. We will use the open-source tool \textbf{Yosys}.
 
 \section{Installation}
 We will install the Yosys Open Synthesis Suite on Ubuntu.
 
 \subsection{1. Install Dependencies}
-First, install the required prerequisites for building Yosys[cite: 291]:
+First, install the required prerequisites for building Yosys:
 \begin{lstlisting}[language=bash]
 sudo apt-get install build-essential clang bison flex \
     libreadline-dev gawk tcl-dev libffi-dev git \
@@ -16,7 +16,7 @@ sudo apt-get install build-essential clang bison flex \
 \end{lstlisting}
 
 \subsection{2. Build Yosys from Source}
-Clone the repository and compile the source code[cite: 293, 297, 299]:
+Clone the repository and compile the source code:
 \begin{lstlisting}[language=bash]
 git clone https://github.com/YosysHQ/yosys.git
 cd yosys
@@ -69,7 +69,7 @@ Navigate to \texttt{RTL2GDS\_WS\_Files/synth/} and execute the script:
 cd synth
 yosys -s run_synth.tcl
 \end{lstlisting}
-Alternatively, you can launch the Yosys interactive shell and source the script manually[cite: 373]:
+Alternatively, you can launch the Yosys interactive shell and source the script manually:
 \begin{lstlisting}[language=bash]
 yosys
 Yosys> script run_synth.tcl
@@ -79,12 +79,12 @@ Yosys> script run_synth.tcl
 Upon successful execution, check the generated file \texttt{design6\_netlist.v}.
 
 \begin{itemize}
-    \item \textbf{Mapped Gates:} You should no longer see equations like \texttt{assign F = A + B}. Instead, you will see instantiated gates such as \texttt{NAND2\_X1}, \texttt{MUX2\_X1}, and \texttt{DFF\_X1}[cite: 376].
+    \item \textbf{Mapped Gates:} You should no longer see equations like \texttt{assign F = A + B}. Instead, you will see instantiated gates from the Sky130 HD library such as \texttt{sky130\_fd\_sc\_hd\_\_nand2\_1}, \texttt{sky130\_fd\_sc\_hd\_\_mux2\_1}, and \texttt{sky130\_fd\_sc\_hd\_\_dfrtp\_1}.
     \item \textbf{Consistency:} The functionality remains the same as the RTL, but it is now structurally defined using the specific cells available in the SkyWater SKY130 HD library.
 \end{itemize}
 
 \section{Notes}
 \begin{itemize}
     \item \textbf{Warnings:} You may see warnings about specific wires or optimizations. Ensure there are no ``Errors'' preventing netlist generation.
-    \item \textbf{Timing Constraints:} At this stage, we have not yet applied strict timing constraints (SDC). The netlist is optimized primarily for area[cite: 359]. Timing optimization will be handled in the next chapter (STA).
+    \item \textbf{Timing Constraints:} At this stage, we have not yet applied strict timing constraints (SDC). The netlist is optimized primarily for area. Timing optimization will be handled in the next chapter (STA).
 \end{itemize}

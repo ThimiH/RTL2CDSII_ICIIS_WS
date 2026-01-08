@@ -41,8 +41,8 @@ For physical design, we need specific technology files (LEF) which define the ph
 \subsection{1. Technology Files}
 Ensure the following SkyWater SKY130 HD files are available in \texttt{RTL2GDS\_WS\_Files/lib/} (they are included in the shared workspace):
 \begin{itemize}
-    \item \texttt{sky130\_v5\_5.lef} (technology + routing layers)
-    \item \texttt{output.lef} (standard cell LEF views)
+    \item \texttt{sky130\_fd\_sc\_hd.tlef} (technology + routing layers)
+    \item \texttt{sky130\_fd\_sc\_hd\_merged.lef} (standard cell LEF views)
     \item \texttt{sky130\_fd\_sc\_hd\_\_tt\_025C\_1v80.lib} (Liberty timing/power)
 \end{itemize}
 
@@ -56,26 +56,39 @@ The \texttt{openroad/} directory in the bundle already includes the automation s
 \section{Steps}
 
 \subsection{1. Run the Placement Flow}
-Navigate to the \texttt{openroad/} directory and execute the script:
+Navigate to the \texttt{RTL2GDS\_WS\_Files/openroad/} directory and execute the script:
+\begin{lstlisting}[language=bash]
+cd RTL2GDS_WS_Files/openroad
+openroad -exit run_placement.tcl
+\end{lstlisting}
+
+For visualization during the flow, use the GUI mode:
 \begin{lstlisting}[language=bash]
 openroad -gui
 % source run_placement.tcl
 \end{lstlisting}
-Using the \texttt{-gui} flag allows you to visualize the changes in real-time.
 
-\subsection{2. Visualization Stages}
-As the script runs, you will observe the following stages in the GUI:
+\subsection{2. Placement Stages}
+The script performs the following stages:
 
 \begin{enumerate}
-    \item \textbf{Floorplan initialization:} The core boundary is defined.
-    \item \textbf{Tap Cell Insertion:} Well-tap cells are added to the boundary to prevent latch-up.
-    \item \textbf{PDN Generation:} A power grid (metal tracks for VDD/VSS) is drawn over the core.
-    \item \textbf{Global Placement:} Cells are spread out roughly (shown as red blocks), often with some overlaps initially.
+    \item \textbf{Floorplan initialization:} The core boundary is defined with 30\% utilization.
+    \item \textbf{Pin Placement:} I/O pins are placed on the die boundary.
+    \item \textbf{Tap Cell Insertion:} Well-tap cells are added to prevent latch-up.
+    \item \textbf{PDN Generation:} A power distribution network (VDD/VSS grid) is created using met1, met4, and met5 layers.
+    \item \textbf{Global Placement:} Cells are spread out roughly to minimize wirelength and congestion.
     \item \textbf{Detailed Placement:} Cells are snapped into valid rows and overlaps are removed.
 \end{enumerate}
 
 \section{Deliverables}
 \begin{itemize}
-    \item \textbf{Screenshots:} Capture the final layout showing standard cells placed inside the core area.
-    \item \textbf{DEF File:} The script generates \texttt{design6\_placed.def}, which contains the physical location of every cell.
+    \item \textbf{Placed Design:} \texttt{design6\_placed.def} contains the physical location of every cell.
+    \item \textbf{Layout Visualization:} In GUI mode, you can view the placed cells, power grid, and routing resources.
 \end{itemize}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.85\textwidth]{images/ch05_placement.png}
+    \caption{OpenROAD GUI showing the placed design with standard cells arranged in rows. The layout displays the floorplan with I/O pins on the periphery, power distribution network (PDN) grid, and standard cells placed within the core area. The different colors represent different cell types and metal layers.}
+    \label{fig:ch05_placement}
+\end{figure}
