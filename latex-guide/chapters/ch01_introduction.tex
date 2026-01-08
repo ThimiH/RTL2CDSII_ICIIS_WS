@@ -26,23 +26,16 @@ RTL2GDS_WS_Files/
 |-- rtl/
 |   |-- design6_comb.v          # Combinational design variant
 |   |-- design6_seq.v           # Sequential design (main target)
-|   |-- tb_design6.v            # Testbench
-|   |-- design6_sim             # Compiled simulation (generated)
-|   `-- design6.vcd             # Waveform output (generated)
+|   `-- tb_design6.v            # Testbench
 |-- synth/
-|   |-- run_synth.tcl           # Yosys synthesis script
-|   `-- design6_netlist.v       # Gate-level netlist (generated)
+|   `-- run_synth.tcl           # Yosys synthesis script
 |-- sta/
 |   |-- design6.sdc             # Timing constraints
 |   `-- run_sta.tcl             # OpenSTA script
 |-- openroad/
 |   |-- pdn_config.tcl          # Power distribution config
 |   |-- run_placement.tcl       # Placement flow script
-|   |-- run_routing.tcl         # Routing flow script
-|   |-- design6_placed.def      # Placed design (generated)
-|   |-- design6_final.def       # Routed design (generated)
-|   |-- design6.drc             # DRC report (generated)
-|   `-- design6.guide           # Routing guide (generated)
+|   `-- run_routing.tcl         # Routing flow script
 `-- lib/
     |-- sky130_fd_sc_hd__tt_025C_1v80.lib  # Liberty timing
     |-- sky130_fd_sc_hd__tt_025C_1v80.db   # Synopsys DB
